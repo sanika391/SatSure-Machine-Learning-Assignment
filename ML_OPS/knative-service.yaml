@@ -1,0 +1,95 @@
+# KNative Service for DenseNet Optimization
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: densenet-service
+  namespace: default
+  annotations:
+    # Enable auto-scaling
+    autoscaling.knative.dev/minScale: "0"
+    autoscaling.knative.dev/maxScale: "10"
+    autoscaling.knative.dev/target: "100"
+    # Resource limits
+    serving.knative.dev/creator: "densenet-optimization-suite"
+    serving.knative.dev/lastModifier: "densenet-optimization-suite"
+spec:
+  template:
+    metadata:
+      annotations:
+        # Enable scale-to-zero
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+        # Resource configuration
+        serving.knative.dev/execution-class: "HPA"
+        # GPU configuration (if available)
+        serving.knative.dev/gpu: "nvidia.com/gpu:1"
+    spec:
+      # Container configuration
+      containers:
+      - name: user-container
+        image: densenet-optimization:latest
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        # Environment variables
+        env:
+        - name: MODEL_VARIANT
+          value: "optimized"
+        - name: BATCH_SIZE
+          value: "1"
+        - name: DEVICE
+          value: "cuda"
+        - name: LOG_LEVEL
+          value: "INFO"
+        # Resource limits
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+            nvidia.com/gpu: "1"
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+      # Pod security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      # Node selection (optional)
+      nodeSelector:
+        kubernetes.io/os: linux
+      # Tolerations for GPU nodes (optional)
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+  # Traffic configuration
+  traffic:
+  - percent: 100
+    latestRevision: true

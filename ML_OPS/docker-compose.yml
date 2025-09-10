@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  densenet-benchmark:
+    build: .
+    container_name: densenet-optimization-benchmark
+    runtime: nvidia
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./results:/app/results
+      - ./logs:/app/logs
+    ports:
+      - "6006:6006"  # TensorBoard port
+    command: ["python", "src/main.py", "--output-dir", "/app/results", "--device", "cuda"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import torch; print('Health check passed')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  tensorboard:
+    image: tensorflow/tensorflow:latest-jupyter
+    container_name: densenet-tensorboard
+    ports:
+      - "6007:6006"  # Alternative TensorBoard port
+    volumes:
+      - ./results/tensorboard:/logs
+    command: ["tensorboard", "--logdir=/logs", "--host=0.0.0.0", "--port=6006"]
+    restart: unless-stopped
+    depends_on:
+      - densenet-benchmark
+
+  # Optional: CPU-only version for testing
+  densenet-benchmark-cpu:
+    build: .
+    container_name: densenet-optimization-benchmark-cpu
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./results-cpu:/app/results
+      - ./logs-cpu:/app/logs
+    ports:
+      - "6008:6006"  # CPU TensorBoard port
+    command: ["python", "src/main.py", "--output-dir", "/app/results", "--device", "cpu"]
+    restart: unless-stopped
+    profiles:
+      - cpu-only
+
+networks:
+  default:
+    name: densenet-benchmark-network

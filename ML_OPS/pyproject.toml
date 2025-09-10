@@ -1,0 +1,39 @@
+[project]
+name = "densenet-optimization"
+version = "0.1.0"
+description = "DenseNet Optimization and Benchmarking for MLOps"
+authors = [
+    {name = "MLOps Engineer", email = "engineer@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "tensorboard>=2.13.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "Pillow>=9.5.0",
+    "tqdm>=4.65.0",
+    "psutil>=5.9.0",
+    "GPUtil>=1.4.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "scikit-learn>=1.3.0",
+    "onnx>=1.14.0",
+    "onnxruntime>=1.15.0",
+    "torch-pruning>=1.3.0",
+    "torch-quantization>=0.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+]
